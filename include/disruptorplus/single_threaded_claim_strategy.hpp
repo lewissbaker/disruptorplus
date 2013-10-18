@@ -133,8 +133,8 @@ namespace disruptorplus
         template<class Clock, class Duration>
         bool try_claim_until(
             size_t count,
-            const std::chrono::time_point<Clock, Duration>& timeoutTime,
-            sequence_range& range)
+            sequence_range& range,
+            const std::chrono::time_point<Clock, Duration>& timeoutTime)
         {
             if (try_claim(count, range))
             {
