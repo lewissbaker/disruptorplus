@@ -11,6 +11,24 @@
 
 namespace disruptorplus
 {
+    // A claim strategy for use where only a single thread will be publishing
+    // items to a ring buffer.
+    //
+    // This strategy avoids the overhead required to synchronise multiple
+    // threads trying to claim slots in the ring buffer.
+    //
+    // A writer thread starts by first claiming one or more slots in the ring buffer
+    // by calling one of the 'wait' methods. The writer then writes to the slots
+    // and indicates to readers it has finished writing to the slots by calling
+    // publish().
+    //
+    // Reader threads can wait until a writer thread has published an element
+    // to the ring buffer by calling one of the wait_until_published() methods.
+    //
+    // Readers indicate they are finished reading from a slot in the ring buffer
+    // by publishing the sequence number of the latest item they are finished
+    // with in the 'claim barrier'. This frees the slot up for writers to
+    // subsequently claim it for future writers.
     template<typename WaitStrategy>
     class single_threaded_claim_strategy
     {
@@ -43,11 +61,27 @@ namespace disruptorplus
             m_lastKnownClaimableSequence = m_claimBarrier.last_published() + m_bufferSize;
         }
 
+        // Block the caller until a single slot in the buffer has become
+        // available. Returns the sequence number of the slot.
+        //
+        // The caller may write to the returned slot and once finished
+        // must call publish() passing the returned sequence number to
+        // make it available for readers.
         sequence_t claim_one()
         {
             return claim(1).first();
         }
         
+        // Request one or more slots in the buffer to write to, blocking
+        // until at least one slot is available. The returned sequence
+        // range may contain less slots than requested if fewer are
+        // available.
+        //
+        // The caller may write to the returned slots and once finished
+        // must call publish(), passing the last sequence number that
+        // has been written to.
+        //
+        // This operation has 'acquire' memory semantics.
         sequence_range claim(size_t count)
         {
             sequence_range result;
@@ -73,6 +107,18 @@ namespace disruptorplus
             return result;
         }
         
+        // Attempt to claim up to 'count' slots in the buffer for writing.
+        // Returns true if any slots were claimed, in which case 'range'
+        // is updated with the sequence of slots that were claimed. Note
+        // that the range may contain fewer slots than requested if fewer
+        // slots were available.
+        // Returns false if no slots were available, in which case 'range'
+        // is left unmodified.
+        //
+        // This call does not block and returns immediately.
+        //
+        // This operation has 'acquire' memory semantics if it returns
+        // true and 'relaxed' memory semantics if it returns false.
         bool try_claim(size_t count, sequence_range& range)
         {
             sequence_diff_t diff = difference(m_lastKnownClaimableSequence, m_nextSequenceToClaim);
@@ -87,7 +133,7 @@ namespace disruptorplus
                 
                 // Only bother updating our cached claimable seq if we will actually be
                 // claiming something. Otherwise our existing cached value already indicates
-                // that we need to check again next time already.
+                // that we need to check again next time.
                 m_lastKnownClaimableSequence = seq;
             }
             assert(diff >= 0);
@@ -98,6 +144,9 @@ namespace disruptorplus
             return true;
         }
         
+        // Attempt to claim up to 'count' slots in the buffer for writing.
+        // Waits for up to 'timeout' for a slot to become available if no
+        // slots currently available.
         template<class Rep, class Period>
         bool try_claim_for(
             size_t count,
@@ -162,21 +211,46 @@ namespace disruptorplus
             return true;
         }
         
+        // Flag that all sequences up to and including 'sequence' have been
+        // published and are now available for readers to access.
+        //
+        // This operation has 'release' memory semantics.
         void publish(sequence_t sequence)
         {
             m_readBarrier.publish(sequence);
         }
 
+        // Return the last sequence that was published.
+        //
+        // All sequences up to and including returned sequence value
+        // have been published and are available for readers to access.
+        //
+        // This operation has 'acquire' memory semantics.
         sequence_t last_published() const
         {
             return m_readBarrier.last_published();
         }
 
+        // Block the caller until the specified sequence has been
+        // published by the writer thread.
+        //
+        // Returns the value of last_published() which may be in
+        // advance of the requested sequence.
+        //
+        // This operation has 'acquire' memory semantics.
         sequence_t wait_until_published(sequence_t sequence) const
         {
             return m_readBarrier.wait_until_published(sequence);
         }
 
+        // Block the caller until either the specified sequence has been
+        // published by the writer thread or until the specified timeout
+        // has elapsed.
+        //
+        // Returns the value of last_published() which may be prior to
+        // the specified sequence in the case of a timeout or equal to
+        // or after the specified sequence in the case of that item being
+        // published.
         template<typename Rep, typename Period>
         sequence_t wait_until_published(
             sequence_t sequence,
