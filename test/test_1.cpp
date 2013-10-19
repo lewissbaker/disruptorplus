@@ -30,13 +30,12 @@ int main(int argc, char* argv[])
     auto start = std::chrono::high_resolution_clock::now();
     
     std::thread reader([&]() {
-        const auto& readBarrier = claimStrategy.read_barrier();
         bool exit = false;
         uint64_t sum = 0;
         sequence_t nextToRead = 0;
         while (!exit)
         {
-            sequence_t available = readBarrier.wait_until_published(nextToRead);
+            sequence_t available = claimStrategy.wait_until_published(nextToRead);
             assert(difference(available, nextToRead) >= 0);
             do
             {

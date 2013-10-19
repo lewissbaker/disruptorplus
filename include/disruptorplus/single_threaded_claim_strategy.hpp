@@ -31,12 +31,6 @@ namespace disruptorplus
             return m_bufferSize;
         }
         
-        // The barrier that readers should wait on for published items
-        const sequence_barrier<WaitStrategy>& read_barrier() const
-        {
-            return m_readBarrier;
-        }
-        
         void add_claim_barrier(sequence_barrier<WaitStrategy>& barrier)
         {
             m_claimBarrier.add(barrier);
@@ -171,6 +165,32 @@ namespace disruptorplus
         void publish(sequence_t sequence)
         {
             m_readBarrier.publish(sequence);
+        }
+
+        sequence_t last_published() const
+        {
+            return m_readBarrier.last_published();
+        }
+
+        sequence_t wait_until_published(sequence_t sequence) const
+        {
+            return m_readBarrier.wait_until_published(sequence);
+        }
+
+        template<typename Rep, typename Period>
+        sequence_t wait_until_published(
+            sequence_t sequence,
+            const std::chrono::duration<Rep, Period>& timeout) const
+        {
+            return m_readBarrier.wait_until_published(sequence, timeout);
+        }
+
+        template<typename Clock, typename Duration>
+        sequence_t wait_until_published(
+            sequence_t sequence,
+            const std::chrono::time_point<Clock, Duration>& timeoutTime) const
+        {
+            return m_readBarrier.wait_until_published(sequence, timeoutTime);
         }
         
     private:
