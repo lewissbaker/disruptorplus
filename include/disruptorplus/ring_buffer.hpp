@@ -37,7 +37,7 @@ namespace disruptorplus
         
         const T& operator[](sequence_t seq) const
         {
-            return m_data[static_case<size_t>(seq) & m_mask];
+            return m_data[static_cast<size_t>(seq) & m_mask];
         }
         
     private:
