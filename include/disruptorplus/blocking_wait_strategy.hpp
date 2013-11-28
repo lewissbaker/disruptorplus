@@ -74,7 +74,7 @@ namespace disruptorplus
         }
         
         template<typename Clock, typename Duration>
-        sequence_range wait_until_published(
+        sequence_t wait_until_published(
             sequence_t sequence,
             size_t count,
             const std::atomic<sequence_t>* const sequences[],
