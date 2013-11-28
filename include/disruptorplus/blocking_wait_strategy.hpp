@@ -72,7 +72,14 @@ namespace disruptorplus
             }
             return result;
         }
-        
+
+        // Wait until all of the specified sequences have at least
+        // published the specified sequence value.
+        // Timeout if specified timeoutTime has passed.
+        // Returns the highest sequence that all sequences have
+        // published if did not time out.
+        // If timed out then returns some number such that
+        // difference(result, sequence) < 0.
         template<typename Clock, typename Duration>
         sequence_t wait_until_published(
             sequence_t sequence,
@@ -94,7 +101,8 @@ namespace disruptorplus
             }
             return result;
         }
-        
+
+        // Signal any waiting threads that one of the sequences has changed.
         void signal_all_when_blocking()
         {
             // Take out a lock here because we don't want to notify other threads

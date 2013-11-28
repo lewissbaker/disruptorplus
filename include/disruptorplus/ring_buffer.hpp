@@ -8,6 +8,16 @@
 
 namespace disruptorplus
 {
+    // A ring buffer is a buffer of size power-of-two that can
+    // be indexed using a sequence number.
+    //
+    // A given slot, i, in the ring buffer is addressed by any sequence
+    // number that has the form n * size() + i for some n.
+    //
+    // A ring buffer is typically used in conjunction with a claim-strategy
+    // for writers to claim a slot in the ring buffer, and one or more
+    // sequence-barriers for readers to indicate where in the ring buffer
+    // they have processed up to.
     template<typename T>
     class ring_buffer
     {

@@ -67,6 +67,8 @@ namespace disruptorplus
         // The caller may write to the returned slot and once finished
         // must call publish() passing the returned sequence number to
         // make it available for readers.
+        //
+        // This operation has 'acquire' memory semantics.
         sequence_t claim_one()
         {
             return claim(1).first();
