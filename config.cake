@@ -97,7 +97,7 @@ def createVariants(baseVariant):
     configuration.addVariant(variant)
 
 if cake.system.isWindows() or cake.system.isCygwin():
-  for msvcVer in ("11.0",):
+  for msvcVer in ("11.0", "12.0"):
     for arch in ("x86", "x64"):
       try:
         msvcVariant = baseVariant.clone(
