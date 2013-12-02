@@ -19,7 +19,7 @@ struct message
 
 int main(int argc, char* argv[])
 {
-    const int itemCount = 10 * 1000 * 1000;
+    const int itemCount = 500 * 1000 * 1000;
     const size_t bufferSize = size_t(1) << 20;
     const int writerBatchSize = 1;
     
@@ -31,8 +31,6 @@ int main(int argc, char* argv[])
     sequence_barrier<spin_wait_strategy> finishedReading(waitStrategy);
     claimStrategy.add_claim_barrier(finishedReading);
     ring_buffer<message> buffer(bufferSize);
-    
-    
 
     std::vector<size_t> readerBatchSizes(bufferSize, 0);
 
@@ -91,7 +89,7 @@ int main(int argc, char* argv[])
             {
                 auto& item = buffer[range[j]];
             
-                item.m_type = i % 5 == 0 ? 0xadd : 0xdec;
+                item.m_type = i % 5 == 0 ? 0xdec : 0xadd;
                 for (int k = 0; k < 28; ++k)
                 {
                     item.m_data[k] = (i + k) % 60;
@@ -115,7 +113,7 @@ int main(int argc, char* argv[])
             {
                 auto& item = buffer[range[j]];
             
-                item.m_type = i % 5 == 0 ? 0xadd : 0xdec;
+                item.m_type = i % 5 == 0 ? 0xdec : 0xadd;
                 for (int k = 0; k < 28; ++k)
                 {
                     item.m_data[k] = (i + k) % 60;
@@ -135,12 +133,13 @@ int main(int argc, char* argv[])
     writer1.join();
     writer2.join();
 
+    auto totalItemCount = itemCount + 2;
+
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = (end - start);
     auto durMS = std::chrono::duration_cast<std::chrono::milliseconds>(dur);
     auto durNS = std::chrono::duration_cast<std::chrono::nanoseconds>(dur);
-    
-    auto nsPerItem = durNS / (itemCount * 2);
+    auto nsPerItem = durNS / totalItemCount;
     
     std::cout << result << "\n"
               << durMS.count() << "ms total time\n"
