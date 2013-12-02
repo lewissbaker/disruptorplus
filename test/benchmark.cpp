@@ -271,7 +271,6 @@ void RunMultiThreadClaimStrategyBenchmark(size_t bufferSize, int writerCount, in
                 do
                 {
                     auto& message = buffer[nextToRead];
-                    //auto latency = readTime - message.m_time;
                     auto latency = std::chrono::duration_cast<std::chrono::nanoseconds>(readTime - message.m_time);
                     ++latencies[std::max<uint64_t>(std::min<uint64_t>(latency.count(), maxLatencyCount) + 1, 0)];
                     if (message.m_type == 0xdead)
