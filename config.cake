@@ -113,6 +113,7 @@ if cake.system.isWindows() or cake.system.isCygwin():
           )
         compiler.addDefine("WIN32")
         compiler.addDefine("_WIN32_WINNT", "0x0500") # WinXP
+        compiler.addDefine("NOMINMAX")
         if arch in ("x64", "ia64"):
           compiler.addDefine("WIN64")
 
