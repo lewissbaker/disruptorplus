@@ -2,6 +2,7 @@
 #define DISRUPTORPLUS_SEQUENCE_HPP_INCLUDED
 
 #include <atomic>
+#include <algorithm>
 #include <cstdint>
 #include <cassert>
 
