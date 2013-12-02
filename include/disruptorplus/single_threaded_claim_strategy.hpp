@@ -39,7 +39,6 @@ namespace disruptorplus
             WaitStrategy& waitStrategy)
         : m_bufferSize(bufferSize)
         , m_nextSequenceToClaim(0)
-        , m_lastKnownClaimableSequence(static_cast<sequence_t>(-1))
         , m_claimBarrier(waitStrategy)
         , m_readBarrier(waitStrategy)
         {}
@@ -52,13 +51,11 @@ namespace disruptorplus
         void add_claim_barrier(sequence_barrier<WaitStrategy>& barrier)
         {
             m_claimBarrier.add(barrier);
-            m_lastKnownClaimableSequence = m_claimBarrier.last_published() + m_bufferSize;
         }
         
         void add_claim_barrier(sequence_barrier_group<WaitStrategy>& barrier)
         {
             m_claimBarrier.add(barrier);
-            m_lastKnownClaimableSequence = m_claimBarrier.last_published() + m_bufferSize;
         }
 
         // Block the caller until a single slot in the buffer has become
@@ -71,7 +68,9 @@ namespace disruptorplus
         // This operation has 'acquire' memory semantics.
         sequence_t claim_one()
         {
-            return claim(1).first();
+            m_claimBarrier.wait_until_published(
+                static_cast<sequence_t>(m_nextSequenceToClaim - m_bufferSize));
+            return m_nextSequenceToClaim++;
         }
         
         // Request one or more slots in the buffer to write to, blocking
@@ -86,12 +85,6 @@ namespace disruptorplus
         // This operation has 'acquire' memory semantics.
         sequence_range claim(size_t count)
         {
-            sequence_range result;
-            if (try_claim(count, result))
-            {
-                return result;
-            }
-
             sequence_t claimable = static_cast<sequence_t>(
                 m_claimBarrier.wait_until_published(
                     static_cast<sequence_t>(m_nextSequenceToClaim - m_bufferSize)) +
@@ -102,9 +95,8 @@ namespace disruptorplus
             
             size_t available = static_cast<size_t>(diff + 1);
             count = std::min(count, available);
-            result = sequence_range(m_nextSequenceToClaim, count);
+            sequence_range result(m_nextSequenceToClaim, count);
             m_nextSequenceToClaim += count;
-            m_lastKnownClaimableSequence = claimable;
             
             return result;
         }
@@ -123,20 +115,11 @@ namespace disruptorplus
         // true and 'relaxed' memory semantics if it returns false.
         bool try_claim(size_t count, sequence_range& range)
         {
-            sequence_diff_t diff = difference(m_lastKnownClaimableSequence, m_nextSequenceToClaim);
+            sequence_t seq = static_cast<sequence_t>(m_claimBarrier.last_published() + m_bufferSize);
+            sequence_diff_t diff = difference(seq, m_nextSequenceToClaim);
             if (diff < 0)
             {
-                sequence_t seq = static_cast<sequence_t>(m_claimBarrier.last_published() + m_bufferSize);
-                diff = difference(seq, m_nextSequenceToClaim);
-                if (diff < 0)
-                {
-                    return false;
-                }
-                
-                // Only bother updating our cached claimable seq if we will actually be
-                // claiming something. Otherwise our existing cached value already indicates
-                // that we need to check again next time.
-                m_lastKnownClaimableSequence = seq;
+                return false;
             }
             assert(diff >= 0);
             size_t available = static_cast<size_t>(diff + 1);
@@ -176,7 +159,6 @@ namespace disruptorplus
             count = std::min(count, available);
             range = sequence_range(m_nextSequenceToClaim, count);
             m_nextSequenceToClaim += count;
-            m_lastKnownClaimableSequence = claimable;
             
             return true;
         }
@@ -208,7 +190,6 @@ namespace disruptorplus
             count = std::min(count, available);
             range = sequence_range(m_nextSequenceToClaim, count);
             m_nextSequenceToClaim += count;
-            m_lastKnownClaimableSequence = claimable;
             
             return true;
         }
