@@ -10,15 +10,44 @@
 
 namespace disruptorplus
 {
-    // This wait strategy uses busy-waits to wait for sequences to be
-    // published.
+    /// \brief
+    /// This wait-strategy busy-waits when waiting for sequences to be
+    /// published.
+    ///
+    /// The busy wait used is a phased wait which backs off incrementally,
+    /// initially actively busy waiting, falling back to yielding the
+    /// thread's remaining time-slice and sleeping occasionally.
+    /// This attempts to balance low-latency throughput during busy periods
+    /// with low CPU usage during the quiet periods.
+    ///
+    /// \see disruptorplus::spin_wait
+    /// \see disruptorplus::blocking_wait_strategy
     class spin_wait_strategy
     {
     public:
     
-        // Wait unconditionally until all of the specified sequences
-        // have at least published the specified sequence value.
-        // Returns the value of the least-advanced sequence.
+        /// \brief
+        /// Wait unconditionally until all of the specified sequences
+        /// have at least published the specified sequence value.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param count
+        /// The number of elements in \p sequences.
+        /// Must be greater than zero.
+        ///
+        /// \param sequences
+        /// An array of \p count pointers to sequence values.
+        /// The call will not return until all of these values have advanced
+        /// beyond the specified \p sequence.
+        ///
+        /// \return
+        /// The value of the least-advanced sequence.
+        /// This value is guaranteed to be at least \p sequence.
+        ///
+        /// \throw std::system_error
+        /// If the system does not have enough resources to perform this operation.
         sequence_t wait_until_published(
             sequence_t sequence,
             size_t count,
@@ -35,13 +64,36 @@ namespace disruptorplus
             return result;
         }
 
-        // Wait until all of the specified sequences have at least
-        // published the specified sequence value.
-        // Timeout if waited longer than specified duration.
-        // Returns the highest sequence that all sequences have
-        // published if did not time out.
-        // If timed out then returns some number such that
-        // difference(result, sequence) < 0.
+        /// \brief
+        /// Wait until either all of the specified sequences have at least
+        /// published the specified sequence value or a timeout is reached.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param count
+        /// The number of elements in \p sequences.
+        /// Must be greater than zero.
+        ///
+        /// \param sequences
+        /// An array of \p count pointers to sequence values.
+        /// The call will wait until all of these sequence values have
+        /// published a sequence number at or after the specified
+        /// \p sequence number.
+        ///
+        /// \param timeout
+        /// The maximum amount of time to wait for the \p sequences
+        /// numbers to advance to \p sequence.
+        ///
+        /// \return
+        /// If the operation timed out then returns some number such
+        /// that <tt>difference(result, sequence) < 0</tt>, otherwise
+        /// returns the least-advanced of all the sequence values read
+        /// from \p sequences, which is guaranteed to satisfy
+        /// <tt>difference(result, sequence) >= 0</tt>.
+        ///
+        /// \throw std::system_error
+        /// If the system does not have enough resources to perform this operation.
         template<typename Rep, typename Period>
         sequence_t wait_until_published(
             sequence_t sequence,
@@ -56,15 +108,37 @@ namespace disruptorplus
                 std::chrono::high_resolution_clock::now() + timeout);
         }
 
-        // Wait until either all of the values in the 'sequences' array are at
-        // least after the specified 'sequence' or until the specified 'timeoutTime'
-        // has passed.
-        //
-        // The 'sequences' array is assumed to have 'count' elements.
-        //
-        // Returns the minimum sequence number from 'sequences'. This will be
-        // prior to the specified 'sequence' if the operation timed out before
-        // the desired sequence number was reached by all sequences.
+        /// \brief
+        /// Wait until either all of the specified sequences have at least
+        /// published the specified sequence value or a timeout time is reached.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param count
+        /// The number of elements in \p sequences.
+        /// Must be greater than zero.
+        ///
+        /// \param sequences
+        /// An array of \p count pointers to sequence values.
+        /// The call will wait until all of these sequence values have
+        /// published a sequence number at or after the specified
+        /// \p sequence number.
+        ///
+        /// \param timeoutTime
+        /// The time to wait until for the \p sequences numbers to
+        /// advance to \p sequence. The operation will timeout after
+        /// this point in time.
+        ///
+        /// \return
+        /// If the operation timed out then returns some number such
+        /// that <tt>difference(result, sequence) < 0</tt>, otherwise
+        /// returns the least-advanced of all the sequence values read
+        /// from \p sequences, which is guaranteed to satisfy
+        /// <tt>difference(result, sequence) >= 0</tt>.
+        ///
+        /// \throw std::system_error
+        /// If the system does not have enough resources to perform this operation.
         template<typename Clock, typename Duration>
         sequence_t wait_until_published(
             sequence_t sequence,
@@ -88,7 +162,8 @@ namespace disruptorplus
             return result;
         }
 
-        // Signal any waiting threads that one of the sequences has changed.
+        /// \brief
+        /// Notify any waiting threads that one of the sequence values has changed.
         void signal_all_when_blocking()
         {
             // This is requred as part of the wait_strategy interface but does nothing
