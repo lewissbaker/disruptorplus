@@ -363,6 +363,27 @@ namespace disruptorplus
         }
 
         /// \brief
+        /// Block the caller until the specified \p sequence has been
+        /// published by the writer thread.
+        ///
+        /// This operation has 'acquire' memory semantics.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param lastKnownPublished
+        /// This sequence number is assumed to have already been published.
+        /// The initial value passed in here on first call should be sequence_t(-1).
+        ///
+        /// \return
+        /// Returns the value of \ref last_published() which may be in
+        /// advance of the requested sequence.
+        sequence_t wait_until_published(sequence_t sequence, sequence_t lastKnownPublished) const
+        {
+            return wait_until_published(sequence);
+        }
+
+        /// \brief
         /// Block the caller until either the specified sequence has been
         /// published by the writer thread or until the specified timeout
         /// has elapsed.
@@ -390,6 +411,38 @@ namespace disruptorplus
         /// \brief
         /// Block the caller until either the specified sequence has been
         /// published by the writer thread or until the specified timeout
+        /// has elapsed.
+        ///
+        /// This operation has 'acquire' memory semantics.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param lastKnownPublished
+        /// This sequence number is assumed to have already been published.
+        /// The initial value passed in here on first call should be sequence_t(-1).
+        ///
+        /// \param timeout
+        /// The maximum amount of time to wait for the sequence number to
+        /// be published.
+        ///
+        /// \return
+        /// Returns the value of \ref last_published() which may be prior to
+        /// the specified sequence in the case of a timeout or equal to
+        /// or after the specified sequence in the case of that item being
+        /// published.
+        template<typename Rep, typename Period>
+        sequence_t wait_until_published(
+            sequence_t sequence,
+            sequence_t lastKnownPublished,
+            const std::chrono::duration<Rep, Period>& timeout) const
+        {
+            return wait_until_published(sequence, timeout);
+        }
+
+        /// \brief
+        /// Block the caller until either the specified sequence has been
+        /// published by the writer thread or until the specified timeout
         /// time has passed.
         ///
         /// \param sequence
@@ -411,7 +464,39 @@ namespace disruptorplus
         {
             return m_readBarrier.wait_until_published(sequence, timeoutTime);
         }
-        
+
+        /// \brief
+        /// Block the caller until either the specified sequence has been
+        /// published by the writer thread or until the specified timeout
+        /// has elapsed.
+        ///
+        /// This operation has 'acquire' memory semantics.
+        ///
+        /// \param sequence
+        /// The sequence number to wait for.
+        ///
+        /// \param lastKnownPublished
+        /// This sequence number is assumed to have already been published.
+        /// The initial value passed in here on first call should be sequence_t(-1).
+        ///
+        /// \param timeoutTime
+        /// The time after which the call should return in failure if
+        /// the specified \p sequence has not yet been published.
+        ///
+        /// \return
+        /// Returns the value of \ref last_published() which may be prior to
+        /// the specified sequence in the case of a timeout or equal to
+        /// or after the specified sequence in the case of that item being
+        /// published.
+        template<typename Clock, typename Duration>
+        sequence_t wait_until_published(
+            sequence_t sequence,
+            sequence_t lastKnownPublished,
+            const std::chrono::time_point<Clock, Duration>& timeoutTime) const
+        {
+            return wait_until_published(sequence, timeoutTime);
+        }
+
     private:
     
         const size_t m_bufferSize;
