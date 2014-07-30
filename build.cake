@@ -6,5 +6,6 @@
 from cake.tools import script
 
 script.execute(script.cwd([
+  "benchmark/build.cake",
   "test/build.cake",
   ]))

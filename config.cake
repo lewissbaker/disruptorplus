@@ -111,6 +111,7 @@ if cake.system.isWindows() or cake.system.isCygwin():
           architecture=arch,
           version=msvcVer,
           )
+        compiler.addCppFlag("/Zc:forScope")
         compiler.addDefine("WIN32")
         compiler.addDefine("_WIN32_WINNT", "0x0500") # WinXP
         compiler.addDefine("NOMINMAX")
