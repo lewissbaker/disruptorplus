@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <memory>
 
 namespace disruptorplus
 {
