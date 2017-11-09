@@ -4,7 +4,7 @@ Disruptor++
 Disruptor++ is a C++11 header-only implementation of the 'disruptor' data structure used
 to communicate between threads in a high-performance producer/consumer arrangement.
 
-See the LMAX [technical paper](http://disruptor.googlecode.com/files/Disruptor-1.0.pdf)
+See the LMAX [technical paper](https://lmax-exchange.github.io/disruptor/files/Disruptor-1.0.pdf)
 for a description of the theory behind the disruptor.
 
 See the [Java LMAX Disruptor project](http://lmax-exchange.github.io/disruptor/) for
