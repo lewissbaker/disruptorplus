@@ -161,6 +161,8 @@ namespace disruptorplus
         {
             assert(!m_sequences.empty());
             
+            size_t count = m_sequences.size();
+            
             sequence_t current = minimum_sequence_after(sequence, count, m_sequences.data());
             if (difference(current, sequence) >= 0)
             {
@@ -198,6 +200,8 @@ namespace disruptorplus
             const std::chrono::time_point<Clock, Duration>& timeoutTime) const
         {
             assert(!m_sequences.empty());
+            
+            size_t count = m_sequences.size();
             
             sequence_t current = minimum_sequence_after(sequence, count, m_sequences.data());
             if (difference(current, sequence) >= 0)
