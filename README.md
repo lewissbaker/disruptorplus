@@ -54,6 +54,7 @@ A single producer/single consumer use of a disruptor for communication.
 #include <disruptorplus/spin_wait_strategy.hpp>
 #include <disruptorplus/sequence_barrier.hpp>
 
+#include <iostream>
 #include <thread>
 
 using namespace disruptorplus;
@@ -116,7 +117,7 @@ int main()
         }
         
         // Publish the terminating event.
-        sequence_t seq = claimStrategy.claim_one():
+        sequence_t seq = claimStrategy.claim_one();
         buffer[seq].data = 0;
         claimStrategy.publish(seq);
     });
